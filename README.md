@@ -175,6 +175,8 @@ Routes เป็นตัวกำหนดว่า HTTP Method และ URL �
 `dashboardController.js`
 
 สรุปจำนวนรายการตามสถานะ โดยกรองข้อมูลตามบทบาท Student เห็นงานของตัวเอง Technician เห็นงานที่ได้รับมอบหมาย และ Admin เห็นทั้งหมด
+![Uploading SOMSOR Controller Layer Infographic.png…]()
+
 
 ### **E. Models — Data Access**
 
