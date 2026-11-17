@@ -310,3 +310,24 @@ Content-Type: application/json
 - **SQLite:** จัดเก็บข้อมูลถาวรของระบบ
 
 **สำหรับการนำเสนออาจารย์:** สามารถเรียกโครงสร้างนี้ว่า *MVC-based Express Architecture* ได้อย่างเหมาะสม แต่ไม่ควรอธิบายว่า Controllers ไม่ติดต่อ Database โดยตรง เพราะโค้ดปัจจุบันยังมีการเรียก SQL จาก Controller อยู่จริงครับ
+
+
+การรับ–ส่งข้อมูลของระบบ SOMSOR (7 Use Cases)
+ลำดับการทำงานหลัก
+
+User → Frontend → Route → Auth Middleware → Controller → Model/SQLite → Controller → Frontend → User
+- Frontend → Route: ส่ง HTTP Request พร้อม JWT ใน Header และข้อมูล JSON ใน Body (สำหรับคำขอที่มี Body)
+- Middleware → Controller: ตรวจสอบ JWT และสิทธิ์ผู้ใช้ แล้วส่ง req.user ต่อ
+- Controller → Model/SQLite: ตรวจสอบเงื่อนไขและอ่าน/เขียนข้อมูลด้วย SQL
+- Controller → Frontend: ส่ง HTTP Status และ JSON Response (ยกเว้น 204)
+รายละเอียดแต่ละ Use Case
+Use Case	ข้อมูลที่ส่งไป Backend	การทำงานของ Backend / Database	ข้อมูลที่ส่งกลับ
+UC-01 แจ้งซ่อม	POST /requests พร้อม title, description, location, category_id	ตรวจสอบข้อมูลและประเภทงาน → INSERT requests สถานะ pending	201 Created + ข้อมูลงานใหม่
+UC-02 ติดตามงาน	GET /requests/me พร้อม JWT	SELECT requests เฉพาะของนักศึกษา	200 OK + รายการงานและสถานะ
+UC-03 Admin ดูงาน	GET /requests หรือ GET /requests/:id	SELECT งานทั้งหมดหรือรายละเอียดงานตาม ID	200 OK + ข้อมูลรายการแจ้งซ่อม
+UC-04 มอบหมายช่าง	POST /requests/:id/assign พร้อม technician_id, note	ตรวจสอบงาน pending และช่าง available → INSERT assignments → UPDATE งานเป็น in_progress และช่างเป็น busy	200 OK + ผลการมอบหมาย
+UC-05 ช่างดูงาน	GET /requests หรือ GET /requests/:id	SELECT งานที่ช่างได้รับมอบหมาย พร้อมตรวจสอบสิทธิ์	200 OK + รายละเอียดงาน
+UC-06 ช่างปิดงาน	PATCH /requests/:id/status พร้อม status: "completed"	ตรวจสอบช่างผู้รับผิดชอบ → UPDATE งานเป็น completed, บันทึก completed_at และเปลี่ยนช่างเป็น available	200 OK + ผลการอัปเดต
+UC-07 ยกเลิกงาน	DELETE /requests/:id พร้อม JWT	ตรวจสอบเจ้าของและสถานะ pending → UPDATE งานเป็น cancelled	204 No Content
+
+หมายเหตุ: ทุก Endpoint ในตารางมี Prefix /api/v1 และข้อมูลที่ระบุเป็นฟิลด์สำคัญ ไม่ใช่ JSON Response ฉบับเต็มของทุก API
