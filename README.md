@@ -1,452 +1,138 @@
-# **SOMSOR — Full MVC Structure & Module Communication**
-
-ผมจะอธิบายโดยยึดจากไฟล์ **SOMSOR_MVC.zip** ที่เราสร้างไว้จริง ครอบคลุมว่าแต่ละ Module มีอะไรอยู่ภายใน ทำหน้าที่อะไร เรียกใช้งานกันอย่างไร และรับ–ส่งข้อมูลอะไรบ้าง
-
-สิ่งสำคัญคือ SOMSOR ใช้ **3-Tier Architecture ร่วมกับ MVC** โดยมีลำดับการสื่อสารหลักดังนี้
-
-```
-Frontend (HTML / CSS / JavaScript)
-          ↕ HTTP / JSON
-Express Routes
-          ↓
-Authentication & Authorization Middleware
-          ↓
-Controllers (Business Logic)
-          ↕
-Models / Database Access
-          ↕ SQL
-SQLite Database
-```
-
-ในเวอร์ชันปัจจุบัน Controllers บางส่วนติดต่อ SQLite โดยตรง ดังนั้นแผนภาพด้านล่างจะสะท้อนโครงสร้างจริง ไม่ได้สมมติว่าทุกคำสั่ง SQL ผ่าน Model ทั้งหมด
-
-## **1. โครงสร้างไฟล์ของระบบ**
-
-```
-SOMSOR_MVC/
-│
-├── server.js                 # Entry Point
-├── package.json              # Dependencies
-│
-├── config/
-│   ├── database.js           # SQLite Connection
-│   └── secret.js             # JWT Secret
-│
-├── routes/
-│   ├── authRoutes.js
-│   ├── requestRoutes.js
-│   ├── categoryRoutes.js
-│   ├── technicianRoutes.js
-│   └── dashboardRoutes.js
-│
-├── controllers/
-│   ├── authController.js
-│   ├── requestController.js
-│   ├── categoryController.js
-│   ├── technicianController.js
-│   └── dashboardController.js
-│
-├── models/
-│   ├── userModel.js
-│   ├── requestModel.js
-│   ├── categoryModel.js
-│   ├── technicianModel.js
-│   └── setup.js
-│
-├── middleware/
-│   └── auth.js
-│
-├── utils/
-│   └── http.js
-│
-└── public/
-    ├── index.html
-    ├── app.js
-    └── style.css
-```
-
-## **2. ความรับผิดชอบของแต่ละ Module**
-
-| Module          | ภายในมีอะไร                                   | รับข้อมูลจาก          | ส่งข้อมูลไป                            |
-| --------------- | --------------------------------------------- | --------------------- | -------------------------------------- |
-| **Frontend**    | UI, ฟอร์ม, JavaScript                         | ผู้ใช้ / API Response | HTTP Request ไป Routes                 |
-| **Routes**      | API Endpoint Mapping                          | Frontend              | Middleware และ Controllers             |
-| **Middleware**  | JWT Verification, Role Checking               | Routes / HTTP Headers | `req.user` และ `next()` หรือ Error     |
-| **Controllers** | Validation, Business Logic, Response          | Routes / Middleware   | Models, SQLite และ Frontend            |
-| **Models**      | SQL Query Helpers, Data Access                | Controllers           | SQLite                                 |
-| **Config**      | Database Connection, JWT Secret               | Server และ Modules    | Connection / Secret                    |
-| **Database**    | 5 ตารางหลัก                                   | Models / Controllers  | Query Results                          |
-| **Utils**       | Error Response, Input Cleaning, Error Wrapper | Controllers           | ข้อมูลที่ผ่านการจัดรูปแบบ / HTTP Error |
+ได้ครับ ผมจะคงรูปแบบสคริปต์เดิมไว้ทั้งหมด โดยปรับ หน้า 14 ให้ลงรายละเอียดเรื่อง Docker Compose การดึง Image ของ Odoo และ PostgreSQL และการสร้าง Container มากขึ้น เพื่อให้คุณสามารถอธิบายขั้นตอนการติดตั้งระบบต่อกรรมการได้ด้วย
 
-## **3. แผนภาพความสัมพันธ์ระหว่าง Modules**
+สคริปต์นี้ครอบคลุม หน้า 11–21 และ 34–50 ของไฟล์ odoo (1).pdf โดยใช้ภาษาพูดแบบนักศึกษานำเสนอโครงงาน ไม่เป็นทางการจนเกินไป แต่ยังคงคำศัพท์ทางเทคนิคที่จำเป็น
 
-\#chatgpt-mermaid-\_r_hv\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_hv\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_hv\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_hv\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_hv\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_hv\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_hv\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_hv\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_hv\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_hv\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_hv\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_hv\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_hv\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_hv\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_hv\_ p{margin:0;}#chatgpt-mermaid-\_r_hv\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_hv\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_hv\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_hv\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_hv\_ .label text,#chatgpt-mermaid-\_r_hv\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_hv\_ .node rect,#chatgpt-mermaid-\_r_hv\_ .node circle,#chatgpt-mermaid-\_r_hv\_ .node ellipse,#chatgpt-mermaid-\_r_hv\_ .node polygon,#chatgpt-mermaid-\_r_hv\_ .node path{fill:rgb(222, 234, 251);stroke:rgb(83, 154, 248);stroke-width:1px;}#chatgpt-mermaid-\_r_hv\_ .rough-node .label text,#chatgpt-mermaid-\_r_hv\_ .node .label text,#chatgpt-mermaid-\_r_hv\_ .image-shape .label,#chatgpt-mermaid-\_r_hv\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_hv\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_hv\_ .rough-node .label,#chatgpt-mermaid-\_r_hv\_ .node .label,#chatgpt-mermaid-\_r_hv\_ .image-shape .label,#chatgpt-mermaid-\_r_hv\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_hv\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_hv\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_hv\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_hv\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_hv\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_hv\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_hv\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_hv\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_hv\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_hv\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_hv\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_hv\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_hv\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_hv\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_hv\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_hv\_ .icon-shape,#chatgpt-mermaid-\_r_hv\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_hv\_ .icon-shape p,#chatgpt-mermaid-\_r_hv\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_hv\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_hv\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_hv\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_hv\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_hv\_ .node .neo-node{stroke:rgb(83, 154, 248);}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_hv\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_hv\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].node .neo-line path{stroke:rgb(83, 154, 248);filter:none;}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_hv\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_hv\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_hv\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_hv\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_hv\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 79, 153);}#chatgpt-mermaid-\_r_hv\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 79, 153);}#chatgpt-mermaid-\_r_hv\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_hv\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_hv\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(245, 250, 255);stroke:rgb(206, 219, 229);stroke-width:1px;}#chatgpt-mermaid-\_r_hv\_ .node rect,#chatgpt-mermaid-\_r_hv\_ .node circle,#chatgpt-mermaid-\_r_hv\_ .node ellipse,#chatgpt-mermaid-\_r_hv\_ .node polygon,#chatgpt-mermaid-\_r_hv\_ .node path{fill:rgb(229, 243, 255);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_hv\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_hv\_ .mermaid-decision .label-container{fill:rgb(245, 250, 255);stroke:rgb(206, 219, 229);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_hv\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_hv\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_hv\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}Users: Student / Admin /TechnicianVIEW: public/index.html,app.js, style.cssserver.js — Express ApplicationROUTES: auth / requests /categories / technicians /dashboardMIDDLEWARE: JWTAuthentication + RoleAuthorizationCONTROLLERS: Auth / Request/ Category / Technician /DashboardMODELS: User / Request /Category / TechnicianCONFIG: database.js / secret.jsSQLite: somsor.dbUTILS: fail / clean / wrapHTTP Request / JSON ResponseSQL บางส่วนในเวอร์ชันปัจจุบันHTTP Response
+ส่วนที่ 1 — สคริปต์หน้า 11–21
 
-## **4. รายละเอียดภายในแต่ละ Module**
+หน้า 11 — การเชื่อมโยงวัตถุประสงค์กับการทดสอบ
 
-### **A. View — Frontend**
+ในส่วนนี้จะเป็นการแสดงความเชื่อมโยงระหว่างวัตถุประสงค์ของโครงงาน วิธีการพัฒนา และแนวทางการตรวจสอบผลครับเราแบ่งออกเป็น 4 ส่วนหลัก ได้แก่ กระบวนการทำงานของ ERP ซึ่งใช้โมดูล Sales, Purchase และ Inventory การจัดเก็บข้อมูลส่วนกลางด้วย PostgreSQL 15 การพัฒนา Dashboard เพิ่มเติมผ่านโมดูล ok_erp_dashboard และการควบคุมสิทธิ์ผู้ใช้งานผ่านระบบ Access Control ของ Odooโดยแต่ละส่วนจะมีวิธีการตรวจสอบที่สอดคล้องกัน เช่น การทดสอบธุรกรรม การตรวจสอบข้อมูลในฐานข้อมูล การตรวจสอบรายงาน และการทดสอบสิทธิ์ เพื่อประเมินว่าระบบสามารถทำงานได้ตรงตามวัตถุประสงค์ที่กำหนดไว้หรือไม่ครับ
 
-`public/`
+หน้า 12 — ขอบเขตของโครงงาน (Project Scope)
 
-ส่วนที่ผู้ใช้มองเห็นและโต้ตอบผ่าน Browser
+สำหรับขอบเขตของโครงงาน เราแบ่งฟังก์ชันหลักออกเป็น 6 ส่วนครับประกอบด้วยระบบการขาย ระบบจัดซื้อ ระบบจัดการสินค้าคงคลัง ระบบออกใบแจ้งหนี้ ระบบ Dashboard และระบบควบคุมสิทธิ์ผู้ใช้งานโดย 4 ส่วนแรกจะใช้โมดูลมาตรฐานของ Odoo เป็นพื้นฐาน ส่วน Dashboard จะเป็นโมดูลที่เราพัฒนาเพิ่มเติม เพื่อรวบรวมข้อมูลจากระบบมานำเสนอในรูปแบบที่เข้าใจได้ง่ายขึ้นและในส่วนของการควบคุมสิทธิ์ เราจะใช้ระบบจัดการผู้ใช้งานของ Odoo เพื่อกำหนดขอบเขตการเข้าถึงตามหน้าที่ของผู้ใช้งานครับ
 
-| ไฟล์         | หน้าที่                                                     |
-| ------------ | ----------------------------------------------------------- |
-| `index.html` | โครงสร้างหน้าจอและฟอร์ม                                     |
-| `style.css`  | รูปแบบ สี Layout และ Responsive UI                          |
-| `app.js`     | จัดการการเข้าสู่ระบบ หน้าจอตามบทบาท เรียก API และแสดงข้อมูล |
+หน้า 13 — ขอบเขตด้านผู้ใช้งาน (Scope of User)
 
-ข้อมูลที่ส่งออก เช่น:
+ในด้านผู้ใช้งาน เราแบ่งออกเป็น 4 บทบาทหลักครับบทบาทแรกคือ Administrator ทำหน้าที่ดูแลบัญชีผู้ใช้งานและการตั้งค่าระบบบทบาทที่สองคือ Sales รับผิดชอบข้อมูลลูกค้า ใบเสนอราคา และคำสั่งขายบทบาทที่สามคือ Warehouse รับผิดชอบการรับสินค้า ตรวจสอบสินค้า และจัดการคลังสินค้าและบทบาทสุดท้ายคือ Manager ซึ่งเน้นการติดตามข้อมูลการดำเนินงานและรายงานสรุปการแบ่งบทบาทลักษณะนี้ช่วยให้สามารถควบคุมการเข้าถึงฟังก์ชันต่าง ๆ ให้สอดคล้องกับหน้าที่ของผู้ใช้งานแต่ละกลุ่มได้ครับ
 
-```
-{
-  "title": "ไฟห้องเรียนเสีย",
-  "description": "ไฟกะพริบตลอดเวลา",
-  "location": "อาคาร A ห้อง 305",
-  "category_id": 1
-}
-```
+หน้า 14 — ขอบเขตด้านเทคโนโลยี (Technology Stack)
 
-Frontend ส่งข้อมูลนี้ไปยัง Backend ผ่าน `POST /api/v1/requests` พร้อม JWT ใน Authorization Header
+ฉบับขยาย — ประมาณ 1–1.5 นาที
 
-### **B. Routes — API Routing**
+สำหรับเทคโนโลยีที่ใช้ในการพัฒนาโครงงาน จะประกอบด้วย 4 ส่วนหลักครับส่วนแรกคือ Odoo 19 Community ซึ่งเป็นแพลตฟอร์มหลักในการพัฒนาระบบ ERP โดยมีโมดูลมาตรฐานที่รองรับการขาย การจัดซื้อ การจัดการคลังสินค้า และการออกใบแจ้งหนี้ส่วนที่สองคือ PostgreSQL 15 ซึ่งเป็นระบบจัดการฐานข้อมูลที่ใช้จัดเก็บข้อมูลสินค้า ลูกค้า ผู้จำหน่าย รวมถึงข้อมูลธุรกรรมต่าง ๆ ของระบบส่วนที่สามคือ Docker Compose ซึ่งเราใช้สำหรับติดตั้งและจัดการสภาพแวดล้อมการทำงานของระบบครับโดยขั้นตอนแรก เราจะกำหนดบริการต่าง ๆ ภายในไฟล์ docker-compose.yml ซึ่งในโครงงานนี้มีบริการหลักอยู่ 2 ส่วน คือ Odoo และ PostgreSQLเมื่อเราใช้คำสั่ง docker compose up -d Docker Compose จะตรวจสอบ Image ที่กำหนดไว้ หากยังไม่มี Image อยู่ในเครื่อง ก็จะดึง Image ของ PostgreSQL 15 และ Odoo 19 จาก Container Registry ตามที่ระบุไว้ในไฟล์ จากนั้นจึงสร้างและเริ่มทำงาน Container ของแต่ละบริการในส่วนของ Odoo เรามีการปรับแต่ง Image เพิ่มเติมเพื่อติดตั้งฟอนต์ภาษาไทย สำหรับแก้ปัญหาการแสดงผลภาษาไทยในเอกสาร PDF ด้วยครับหลังจาก Container ทำงานแล้ว Odoo จะเชื่อมต่อกับ PostgreSQL ผ่านเครือข่ายภายใน Docker Compose โดยข้อมูลจะถูกจัดเก็บไว้ใน Persistent Volumes เพื่อให้ข้อมูลยังคงอยู่แม้เราจะปิดหรือเริ่ม Container ใหม่และเทคโนโลยีส่วนสุดท้ายคือ Python, XML, JavaScript และ SCSS ซึ่งเราใช้สำหรับพัฒนา Custom Module โดย Python ใช้จัดการข้อมูลฝั่ง Backend ส่วน JavaScript, XML และ SCSS ใช้พัฒนาการทำงานและหน้าตาของ Dashboard ครับ
 
-Routes เป็นตัวกำหนดว่า HTTP Method และ URL ใดจะไปยัง Controller Handler ใด
+จุดที่ควรจำเผื่อกรรมการถาม: Docker Image เปรียบเสมือนต้นแบบที่มีซอฟต์แวร์และส่วนประกอบที่จำเป็น ส่วน Container คือสภาพแวดล้อมที่ถูกสร้างขึ้นจาก Image และกำลังทำงานอยู่ โดยโครงงานนี้ใช้ Image ที่ปรับแต่งจาก Odoo 19 ร่วมกับ PostgreSQL 15
 
-| Route Module          | Endpoint หลัก                                                                | Controller |
-| --------------------- | ---------------------------------------------------------------------------- | ---------- |
-| `authRoutes.js`       | `/auth/register`, `/auth/login`, `/auth/me`                                  | Auth       |
-| `requestRoutes.js`    | `/requests`, `/requests/:id`, `/requests/:id/assign`, `/requests/:id/status` | Request    |
-| `categoryRoutes.js`   | `/categories`, `/categories/:id`                                             | Category   |
-| `technicianRoutes.js` | `/technicians`                                                               | Technician |
-| `dashboardRoutes.js`  | `/dashboard`                                                                 | Dashboard  |
+หน้า 15 — ขอบเขตและข้อจำกัดของระบบ
 
-ทุก Endpoint ข้างต้นอยู่ภายใต้ Prefix `/api/v1`
+สไลด์นี้จะแสดงสิ่งที่อยู่ภายในและภายนอกขอบเขตการพัฒนาของภาคเรียนที่ 1 ครับภายในขอบเขตจะประกอบด้วยระบบขายและจัดซื้อ การจัดการสินค้าคงคลัง การออกใบแจ้งหนี้ Dashboard และการกำหนดสิทธิ์ผู้ใช้งานส่วนระบบพยากรณ์ความต้องการสินค้าด้วย AI และระบบแจ้งเตือนสินค้าใกล้หมดแบบพัฒนาเฉพาะ ยังไม่อยู่ในขอบเขตของภาคเรียนนี้รวมถึงระบบชำระเงินออนไลน์ผ่าน Payment Gateway และแอปพลิเคชันมือถือแยกต่างหากด้วยครับอย่างไรก็ตาม ระบบ AI Forecasting และ Low Stock Alert เราวางแผนจะนำมาพัฒนาต่อในภาคเรียนที่ 2 ครับ
 
-ในโค้ดจริง Routes เรียกชุด Handler เช่น `handler0`, `handler1` ที่ export จาก Controller ซึ่งแต่ละชุดมี Middleware และฟังก์ชันประมวลผลประกอบกัน
+หน้า 16 — Block Diagram ของระบบ
 
-### **C. Middleware — Authentication & Authorization**
+ต่อมาเป็นภาพรวมสถาปัตยกรรมของระบบครับเริ่มจากผู้ใช้งานทั้ง 4 บทบาท เข้าถึง Odoo ผ่าน Web Browser โดยเชื่อมต่อกับระบบผ่าน HTTP ที่พอร์ต 8069ภายใน Docker Compose จะประกอบด้วย Container หลัก 2 ส่วน คือ Odoo 19 Community และ PostgreSQL 15ฝั่ง Odoo จะรับผิดชอบการทำงานของโมดูลธุรกิจ รวมถึง Custom Module ที่เราพัฒนาเพิ่มเติม ส่วน PostgreSQL จะทำหน้าที่จัดเก็บข้อมูลทั้งสองส่วนติดต่อกันผ่าน Odoo ORM ซึ่งช่วยให้โค้ดฝั่ง Odoo สามารถเข้าถึงและจัดการข้อมูลในฐานข้อมูลได้นอกจากนี้ยังมีการใช้ Persistent Volumes เพื่อเก็บข้อมูลของ Odoo และ PostgreSQL ให้คงอยู่แม้มีการหยุดหรือเริ่ม Container ใหม่ครับ
 
-ไฟล์ `middleware/auth.js` มีฟังก์ชันหลัก 2 ตัว
+หน้า 17 — Database Overview: ERD Crow’s Foot
 
-`auth(req, res, next)`
+ในส่วนของฐานข้อมูล เราใช้ PostgreSQL ซึ่งเป็นฐานข้อมูลที่ทำงานร่วมกับ Odoo ครับแผนภาพนี้แสดงความสัมพันธ์ภาพรวมของตารางที่เกี่ยวข้องกับการขาย การจัดซื้อ สินค้าคงคลัง การออกใบแจ้งหนี้ และข้อมูลผู้ใช้งานจุดสำคัญคือข้อมูลไม่ได้ถูกจัดเก็บแยกกันโดยไม่มีความสัมพันธ์ แต่มีการเชื่อมโยงผ่าน Primary Key และ Foreign Keyทำให้ระบบสามารถอ้างอิงข้อมูลสินค้า ลูกค้า และเอกสารธุรกรรมร่วมกันได้ครับโดยในสไลด์ถัดไป เราจะอธิบายความสัมพันธ์ของฐานข้อมูลในแต่ละส่วนให้ละเอียดมากขึ้นครับ
 
-- อ่าน JWT จาก `Authorization: Bearer <token>`
-- ตรวจสอบลายเซ็นและอายุ Token
-- ถ้าถูกต้อง นำข้อมูลผู้ใช้ใส่ใน `req.user`
-- ถ้าไม่ถูกต้อง ส่ง `401 Unauthorized`
+หน้า 18 — Sales & Invoicing Database
 
-`roles(...allowed)`
+แผนภาพนี้จะเจาะลึกความสัมพันธ์ของฐานข้อมูลด้านการขายและการออกใบแจ้งหนี้ครับโดยตาราง sale_order ใช้เก็บข้อมูลหลักของคำสั่งขาย และ sale_order_line ใช้เก็บรายการสินค้าที่อยู่ในคำสั่งขายข้อมูลสินค้าจะเกี่ยวข้องกับ product_product และ product_template ส่วนข้อมูลลูกค้าจะเกี่ยวข้องกับ res_partnerสำหรับการส่งมอบสินค้า จะมีตาราง stock_picking และ stock_move และในส่วนของใบแจ้งหนี้จะเกี่ยวข้องกับ account_move และ account_move_lineโครงสร้างนี้ทำให้ข้อมูลการขายสามารถเชื่อมโยงไปยังการส่งมอบสินค้าและเอกสารทางการเงินได้ครับ
 
-- ตรวจสอบ `req.user.role`
-- อนุญาตเฉพาะบทบาทที่กำหนด
-- ถ้าไม่มีสิทธิ์ ส่ง `403 Forbidden`
+หน้า 19 — Purchase & Inventory Database
 
-ตัวอย่างการใช้งาน:
+ต่อมาเป็นความสัมพันธ์ของฐานข้อมูลด้านการจัดซื้อและคลังสินค้าครับเริ่มจาก purchase_order ซึ่งเก็บข้อมูลหลักของใบสั่งซื้อ และ purchase_order_line ซึ่งเก็บรายละเอียดสินค้าในแต่ละรายการข้อมูลผู้จำหน่ายเชื่อมโยงกับ res_partner ส่วนข้อมูลสินค้าจะอ้างอิงจาก product_product และ product_templateเมื่อมีการรับสินค้า ระบบจะใช้ข้อมูลในกลุ่ม stock_picking, stock_move และ stock_move_line เพื่อติดตามการเคลื่อนไหวของสินค้าและมี stock_quant สำหรับจัดเก็บข้อมูลปริมาณสินค้าคงเหลือตามตำแหน่งจัดเก็บครับ
 
-```
-[auth, roles('admin'), controllerFunction]
-```
+หน้า 20 — User Management & Access Control
 
-หมายถึงต้องเข้าสู่ระบบและเป็น Admin ก่อนจึงดำเนินการต่อได้
+สไลด์นี้เป็นโครงสร้างฐานข้อมูลที่เกี่ยวข้องกับการจัดการผู้ใช้งานและสิทธิ์ครับโดย res_users ใช้เก็บข้อมูลบัญชีผู้ใช้งาน และ res_partner ใช้เก็บข้อมูลที่เกี่ยวข้องกับบุคคลหรือผู้ติดต่อส่วน res_groups ใช้กำหนดกลุ่มสิทธิ์ และมีตารางความสัมพันธ์สำหรับเชื่อมโยงผู้ใช้งานเข้ากับกลุ่มต่าง ๆนอกจากนี้ยังมี ir_model_access และ ir_rule ซึ่งเกี่ยวข้องกับการควบคุมสิทธิ์การเข้าถึงโมเดลและข้อมูลโครงสร้างเหล่านี้เป็นพื้นฐานที่ Odoo ใช้สำหรับจัดการสิทธิ์ตามบทบาทของผู้ใช้งานครับ
 
-### **D. Controllers — Business Logic**
+หน้า 21 — Custom Module Architecture & Code Implementation
 
-`authController.js`
+ในส่วนนี้เป็นการพัฒนา Custom Module ที่ชื่อว่า OK ERP Dashboard ครับเราแบ่งการทำงานออกเป็น 3 ส่วนหลัก ได้แก่ Backend, Frontend และ User Interfaceฝั่ง Backend ใช้ Python ในไฟล์ dashboard.py และใช้ Odoo ORM ในการเข้าถึงและประมวลผลข้อมูลจากระบบฝั่ง Frontend ใช้ JavaScript และ OWL Component สำหรับเรียกข้อมูลจาก Backend และควบคุมการแสดงผลส่วน User Interface ใช้ XML และ SCSS สำหรับกำหนดโครงสร้างและรูปแบบหน้าจอตัวอย่างโค้ดทางด้านขวาแสดงแนวคิดการดึงข้อมูลผ่าน ORM และส่งผลลัพธ์กลับไปยัง Frontend เพื่อแสดงบน Dashboard ครับ
 
-รับชื่อ อีเมล รหัสผ่าน และจัดการ Register/Login โดยใช้ `bcryptjs` สำหรับ Hash/Verify Password และ `jsonwebtoken` สำหรับสร้าง JWT
+หมายเหตุ: โค้ดในหน้า 21 เป็นตัวอย่างแนวทางการพัฒนา ไม่ใช่การยืนยันว่าเป็นโค้ดจริงทุกบรรทัดของโปรเจกต์
 
-ส่งผลลัพธ์เป็นข้อมูลบัญชีผู้ใช้หรือ Token
+ส่วนที่ 2 — สคริปต์หน้า 34–50
 
-`requestController.js`
+หน้า 34 — Login: การเข้าสู่ระบบและยืนยันตัวตน
 
-จัดการวงจรชีวิตงานแจ้งซ่อมทั้งหมด ได้แก่ สร้างรายการ ดูรายการ ดูรายละเอียด มอบหมายช่าง เปลี่ยนสถานะ และยกเลิกรายการ
+ต่อมาเป็นตัวอย่างหน้าจอการทำงานของระบบครับเริ่มจากหน้า Login ซึ่งผู้ใช้งานจะต้องเข้าสู่ระบบด้วยบัญชีที่ได้รับการกำหนดไว้ระบบจะใช้ข้อมูลบัญชีผู้ใช้งานและสิทธิ์ที่กำหนด เพื่อควบคุมการเข้าถึงเมนูและฟังก์ชันต่าง ๆ ตามบทบาทของแต่ละคนครับ
 
-ตรวจสอบเงื่อนไข เช่น มอบหมายได้เฉพาะงาน `pending` และช่างต้องมีสถานะ `available`
+หน้า 35 — Main Menu: หน้าหลักของระบบ
 
-`categoryController.js`
+หลังจากเข้าสู่ระบบ ผู้ใช้งานจะพบกับหน้าหลักของ Odoo ซึ่งเป็นจุดรวมของโมดูลต่าง ๆในโครงงานนี้ เราเลือกใช้โมดูลหลัก ได้แก่ Sales, Purchase, Inventory และ Invoicing เพื่อรองรับการดำเนินงานของร้านวัสดุก่อสร้างผู้ใช้งานสามารถเลือกเข้าแต่ละโมดูลเพื่อดำเนินงานตามหน้าที่ของตนเองได้ครับ
 
-อ่าน เพิ่ม และแก้ไขประเภทงานซ่อม ตรวจสอบข้อมูลว่างและชื่อซ้ำ โดยสิทธิ์เพิ่ม/แก้ไขเป็นของ Admin
+หน้า 36 — Sales: Quotations
 
-`technicianController.js`
+สไลด์นี้เป็นหน้ารายการใบเสนอราคาครับพนักงานฝ่ายขายสามารถตรวจสอบรายการใบเสนอราคาที่สร้างไว้ รวมถึงข้อมูลลูกค้า วันที่ และสถานะของเอกสารโดยใบเสนอราคาจะเป็นจุดเริ่มต้นของกระบวนการขาย และเมื่อได้รับการยืนยันแล้ว จะสามารถดำเนินการต่อเป็นคำสั่งขายได้ครับ
 
-ส่งรายชื่อช่าง พร้อมข้อมูลผู้ใช้ ความเชี่ยวชาญ และสถานะว่าง/ไม่ว่าง โดยให้ Admin เรียกดู
+หน้า 37 — Sales Order Detail
 
-`dashboardController.js`
+หน้านี้เป็นรายละเอียดของ Sales Order หรือคำสั่งขายครับภายในเอกสารจะแสดงข้อมูลลูกค้า รายการสินค้า จำนวน ราคาต่อหน่วย และยอดรวมของคำสั่งขายจากตัวอย่างในสไลด์ เป็นคำสั่งขายหมายเลข S00001เมื่อยืนยันคำสั่งขายแล้ว ระบบสามารถเชื่อมโยงไปยังกระบวนการส่งมอบสินค้าและการออกใบแจ้งหนี้ได้ ทำให้ไม่จำเป็นต้องกรอกข้อมูลธุรกรรมเดิมซ้ำหลายครั้งครับ
 
-สรุปจำนวนรายการตามสถานะ โดยกรองข้อมูลตามบทบาท Student เห็นงานของตัวเอง Technician เห็นงานที่ได้รับมอบหมาย และ Admin เห็นทั้งหมด
-![Uploading SOMSOR Controller Layer Infographic.png…]()
+หน้า 38 — Purchase Orders
 
+ต่อมาเป็นโมดูล Purchase สำหรับจัดการการสั่งซื้อสินค้าจากผู้จำหน่ายครับหน้านี้จะแสดงรายการใบสั่งซื้อ พร้อมข้อมูลผู้จำหน่าย วันที่ ยอดรวม และสถานะของเอกสารช่วยให้ผู้ใช้งานสามารถติดตามรายการจัดซื้อ และตรวจสอบคำสั่งซื้อที่ดำเนินการไปแล้วได้ครับ
 
-### **E. Models — Data Access**
+หน้า 39 — Purchase Order Detail
 
-| Model                | ฟังก์ชัน / ข้อมูลสำคัญ              |
-| -------------------- | ----------------------------------- |
-| `userModel.js`       | `findByEmail()`, `findPublicById()` |
-| `requestModel.js`    | `requestSQL`, `canSee()`            |
-| `categoryModel.js`   | `all()`                             |
-| `technicianModel.js` | `all()`                             |
-| `setup.js`           | สร้างตาราง Index และข้อมูลเริ่มต้น  |
-1. หน้าที่ของแต่ละไฟล์
+สไลด์นี้แสดงรายละเอียดของใบสั่งซื้อหมายเลข P00001 ครับภายในเอกสารประกอบด้วยข้อมูลผู้จำหน่าย รายการสินค้า จำนวนที่สั่งซื้อ ราคาต่อหน่วย และยอดรวมหลังจากยืนยัน Purchase Order แล้ว ระบบจะเชื่อมโยงไปยังกระบวนการรับสินค้าเข้าคลัง ซึ่งช่วยให้สามารถติดตามได้ว่าสินค้าที่สั่งซื้อได้รับเข้ามาแล้วหรือยังครับ
 
-userModel.js — จัดการข้อมูลผู้ใช้
+หน้า 40 — Receipt: การรับสินค้าเข้าคลัง
 
-ติดต่อกับตาราง users เพื่อค้นหาผู้ใช้จากอีเมลด้วย findByEmail() และค้นหาข้อมูลผู้ใช้จาก ID ด้วย findPublicById() โดยฟังก์ชันหลังไม่ส่งคืนรหัสผ่าน
+เมื่อสินค้าจากผู้จำหน่ายมาถึงร้าน จะเข้าสู่กระบวนการรับสินค้าในโมดูล Inventory ครับจากตัวอย่างเป็นเอกสารรับสินค้าหมายเลข WH/IN/00001พนักงานคลังสินค้าสามารถตรวจสอบรายการสินค้าและจำนวนที่ได้รับจริง ก่อนยืนยันการรับสินค้าเมื่อรายการรับสินค้าสำเร็จ ระบบจะปรับปรุงจำนวนสินค้าคงเหลือในคลังตามจำนวนที่รับเข้าครับ
 
-ใช้ประกอบการเข้าสู่ระบบและเรียกดูข้อมูลบัญชีผู้ใช้
+หน้า 41 — Inventory: รายการสินค้า
 
+หน้านี้เป็นส่วนของการจัดการข้อมูลสินค้าภายในร้านครับระบบสามารถแสดงรายการสินค้า พร้อมรายละเอียดเบื้องต้น เช่น ชื่อสินค้า รูปภาพ และข้อมูลที่เกี่ยวข้องสำหรับร้านวัสดุก่อสร้างที่มีสินค้าหลายประเภท หน้านี้จะช่วยให้พนักงานสามารถค้นหาและเข้าถึงข้อมูลสินค้าได้สะดวกขึ้นครับ
 
+หน้า 42 — Product Detail: รายละเอียดสินค้าและจำนวนคงเหลือ
 
+เมื่อเลือกสินค้าจากหน้ารายการ ระบบจะแสดงรายละเอียดของสินค้านั้นครับตัวอย่างในสไลด์เป็นผลิตภัณฑ์ปูนซีเมนต์ ซึ่งมีข้อมูลอย่างเช่น ราคาขาย ราคาต้นทุน ประเภทสินค้า และจำนวนสินค้าคงเหลือข้อมูลส่วนนี้มีความสำคัญ เพราะเชื่อมโยงกับทั้งกระบวนการขายและการจัดซื้อ ทำให้แต่ละโมดูลสามารถอ้างอิงข้อมูลสินค้าชุดเดียวกันได้ครับ
 
-requestModel.js — จัดการข้อมูลรายการแจ้งซ่อม
+หน้า 43 — Delivery Order: การส่งมอบสินค้า
 
-มี requestSQL สำหรับดึงข้อมูลรายการแจ้งซ่อมพร้อมชื่อผู้แจ้ง ประเภทงาน และชื่อช่างที่ได้รับมอบหมายล่าสุด
+หลังจากยืนยันคำสั่งขาย ระบบจะเข้าสู่กระบวนการส่งมอบสินค้าให้ลูกค้าครับตัวอย่างในสไลด์เป็นเอกสารหมายเลข WH/OUT/00001พนักงานคลังสินค้าจะตรวจสอบสินค้าและจำนวนที่ต้องส่งมอบ ก่อนยืนยันการดำเนินการเมื่อส่งมอบสำเร็จ ระบบจะบันทึกการเคลื่อนไหวของสินค้าและปรับปรุงจำนวนคงเหลือในคลัง ทำให้สามารถติดตามการจ่ายสินค้าออกจากร้านได้ครับ
 
-มีฟังก์ชัน canSee() เพื่อตรวจสอบว่าผู้ใช้มีสิทธิ์ดูรายการนั้นหรือไม่ เช่น นักศึกษาดูงานของตัวเอง และช่างดูงานที่ได้รับมอบหมาย
+หน้า 44 — Customer Invoice: ใบแจ้งหนี้
 
-ใช้ตาราง requests, users, categories, assignments และ technicians
+ในส่วนนี้เป็นการออกใบแจ้งหนี้ให้กับลูกค้าครับจากตัวอย่างเป็นใบแจ้งหนี้หมายเลข INV/2026/00001 ซึ่งเชื่อมโยงกับข้อมูลการขายที่เกิดขึ้นก่อนหน้าภายในเอกสารจะแสดงข้อมูลลูกค้า รายการสินค้า จำนวน ราคา ภาษี และยอดรวมที่ต้องชำระการเชื่อมโยงข้อมูลจาก Sales Order มายังใบแจ้งหนี้ช่วยลดการกรอกข้อมูลซ้ำ และทำให้ตรวจสอบเอกสารที่เกี่ยวข้องกับการขายได้สะดวกขึ้นครับ
 
+หน้า 45 — OK ERP Dashboard
 
+สไลด์นี้เป็นหน้ารายงาน Dashboard ที่มีอยู่ในระบบ Odoo ครับซึ่งแสดงข้อมูลสรุปด้านการขาย เช่น จำนวนใบเสนอราคา จำนวนคำสั่งขาย ยอดรายได้ และข้อมูลยอดขายรายเดือนหน้านี้เป็นตัวอย่างการนำข้อมูลธุรกรรมมาสรุปเป็นรายงาน เพื่อช่วยให้ผู้ใช้งานสามารถติดตามภาพรวมของการดำเนินงานได้ง่ายขึ้นครับและในสไลด์ถัดไป จะเป็น Dashboard ที่เราพัฒนาเพิ่มเติมสำหรับโครงงานนี้โดยเฉพาะครับ
 
+หน้า 46 — Custom Dashboard: OK HOME IMPROVEMENT
 
-categoryModel.js — จัดการประเภทงานซ่อม
+หน้านี้เป็นส่วนที่เราได้พัฒนาเพิ่มเติมเองครับ โดยใช้ชื่อว่า OK ERP DashboardDashboard นี้จะแสดงข้อมูลสำคัญ เช่น ยอดขายรวม ยอดจัดซื้อรวม จำนวนสินค้าที่ขาย และจำนวนสินค้าที่สั่งซื้อนอกจากนี้ยังมีกราฟยอดขายย้อนหลัง 6 เดือน และรายการสินค้าขายดี 5 อันดับอีกหนึ่งฟังก์ชันที่เราเพิ่มเข้ามาคือการกรองข้อมูลตามช่วงวันที่ ซึ่งช่วยให้ผู้ใช้งานสามารถเลือกดูข้อมูลในช่วงเวลาที่ต้องการได้โดยข้อมูลเหล่านี้ถูกดึงและประมวลผลจากระบบ Odoo ผ่าน Custom Module ที่เราพัฒนาขึ้นครับ
 
-มีฟังก์ชัน all() สำหรับดึงข้อมูลประเภทงานซ่อมทั้งหมดจากตาราง categories โดยเรียงตาม category_id
+หน้า 47 — Quotation PDF: ใบเสนอราคา
 
-ใช้แสดงรายการประเภทงาน เช่น ไฟฟ้า เครื่องปรับอากาศ และประปา
+นอกจากการจัดการข้อมูลผ่านหน้าจอแล้ว ระบบยังสามารถสร้างเอกสารในรูปแบบ PDF ได้ครับตัวอย่างนี้เป็นใบเสนอราคา ซึ่งแสดงข้อมูลร้านค้า ลูกค้า รายการสินค้า จำนวน ราคาต่อหน่วย และยอดรวมเอกสารนี้สามารถนำไปใช้ประกอบกระบวนการเสนอราคาให้ลูกค้าได้ และยังสามารถแสดงข้อความภาษาไทยได้ตามการตั้งค่าฟอนต์ที่เราได้ปรับปรุงไว้ครับ
 
+หน้า 48 — Invoice PDF: ใบแจ้งหนี้
 
+สไลด์นี้เป็นตัวอย่างใบแจ้งหนี้ในรูปแบบ PDF ครับโดยระบบจะนำข้อมูลจากเอกสารใบแจ้งหนี้มาแสดงในรูปแบบที่สามารถพิมพ์หรือจัดเก็บเป็นเอกสารได้ภายในจะมีข้อมูลลูกค้า รายการสินค้า ยอดก่อนภาษี ภาษีมูลค่าเพิ่ม และยอดรวมส่วนนี้แสดงให้เห็นว่าระบบสามารถรองรับทั้งการจัดการธุรกรรมภายใน Odoo และการจัดทำเอกสารสำหรับการดำเนินงานของร้านได้ครับ
 
+หน้า 49 — Conclusion: ผลการดำเนินงานภาคเรียนที่ 1
 
-technicianModel.js — จัดการข้อมูลช่างซ่อม
+สำหรับผลการดำเนินงานในภาคเรียนที่ 1 เราเริ่มจากการศึกษาและเรียนรู้ระบบ Odoo ERP เพื่อทำความเข้าใจโครงสร้าง การทำงานของโมดูล และแนวทางการพัฒนา Custom Module ครับจากนั้นได้วิเคราะห์ความต้องการของร้านวัสดุก่อสร้าง ออกแบบระบบ และติดตั้ง Odoo 19 Community ร่วมกับ PostgreSQL และ Dockerในส่วนของการพัฒนา เราได้ติดตั้งและทดสอบโมดูลหลักทั้ง Sales, Purchase, Inventory และ Invoicing รวมถึงพัฒนา OK ERP Dashboard เพื่อแสดงรายงานสรุปข้อมูลนอกจากนี้ยังได้จัดเตรียมการจัดการผู้ใช้งานตามบทบาท ศึกษาความสัมพันธ์ของฐานข้อมูล และทดสอบกระบวนการทำงานเบื้องต้น ตั้งแต่การจัดซื้อ รับสินค้า ขายสินค้า ส่งมอบสินค้า ไปจนถึงการออกใบแจ้งหนี้ครับโดยภาพรวม ภาคเรียนที่ 1 จึงเป็นการวางโครงสร้างและพัฒนาฟังก์ชันพื้นฐานของระบบ ERP เพื่อเตรียมต่อยอดในภาคเรียนถัดไปครับ
 
-มีฟังก์ชัน all() สำหรับดึงรายชื่อช่างทั้งหมด โดย JOIN ตาราง technicians กับ users เพื่อแสดงชื่อ อีเมล ความเชี่ยวชาญ เบอร์โทรศัพท์ และสถานะ available หรือ busy
+หน้า 50 — แผนการดำเนินงานภาคเรียนที่ 2
 
-ใช้ประกอบการแสดงรายชื่อช่างและการเลือกช่างเพื่อมอบหมายงาน
+สำหรับแผนการดำเนินงานในภาคเรียนที่ 2 เรามีแผนที่จะพัฒนาระบบเพิ่มเติมอีก 3 ส่วนหลักครับส่วนแรกคือระบบ Point of Sale หรือ POS เพื่อรองรับการขายสินค้าหน้าร้าน การรับชำระเงิน และการออกใบเสร็จ พร้อมเชื่อมโยงข้อมูลการขายกับระบบคลังสินค้าส่วนที่สองคือ AI Stock Forecasting ซึ่งจะนำข้อมูลการขายย้อนหลังจากระบบ Sales และ POS มาวิเคราะห์ เพื่อคาดการณ์ความต้องการสินค้าในอนาคตและส่วนที่สามคือ Low Stock Alert หรือระบบแจ้งเตือนสินค้าใกล้หมด เพื่อช่วยให้ร้านสามารถตรวจสอบสินค้าที่มีจำนวนต่ำกว่าระดับที่กำหนดได้หลังจากนั้นเราจะเชื่อมต่อฟังก์ชันเหล่านี้เข้ากับ Odoo ERP และ Dashboard รวมถึงทดสอบความถูกต้องของข้อมูลและประเมินประสิทธิภาพของระบบสุดท้ายจะเป็นการปรับปรุงระบบ จัดทำคู่มือการใช้งาน และจัดทำรายงานโครงงานฉบับสมบูรณ์ครับทั้งหมดนี้คือผลการดำเนินงานและแนวทางการพัฒนาต่อของโครงงาน Web ERP for Home Improvement Store ขอบคุณครับ
 
+สรุปเวลานำเสนอ
 
+ช่วงสไลด์	เวลาโดยประมาณ
+หน้า 11–13: วัตถุประสงค์และขอบเขต	2 นาที
+หน้า 14: Technology Stack และ Docker	1–1.5 นาที
+หน้า 15–16: ข้อจำกัดและสถาปัตยกรรม	1–1.5 นาที
+หน้า 17–21: Database และ Custom Module	3–4 นาที
+หน้า 34–48: หน้าจอการทำงาน	5–7 นาที
+หน้า 49–50: สรุปและแผนงาน	2–3 นาที
+รวม	ประมาณ 14–19 นาที
 
-
-setup.js — เตรียมฐานข้อมูล
-
-มีฟังก์ชัน initialize(db) สำหรับสร้างตารางทั้ง 5 ตารางและ Index หากยังไม่มี รวมถึงเพิ่มประเภทงานซ่อมเริ่มต้น
-
-เมื่อกำหนด SEED_DEMO=true จะสร้างบัญชีทดสอบ Student, Admin และ Technician รวมถึงรายการแจ้งซ่อมตัวอย่างตามเงื่อนไขในโค้ด
-
-ทำงานในช่วงเริ่มต้นระบบ ไม่ใช่ Model สำหรับจัดการรายการแจ้งซ่อมรายวัน
-
-จุดที่ควรเข้าใจคือ `requestModel.js` ในเวอร์ชันนี้มี SQL สำหรับอ่านรายการและตรวจสอบสิทธิ์ แต่การสร้างงาน มอบหมายงาน และเปลี่ยนสถานะยังดำเนินการ SQL ใน `requestController.js` โดยตรง
-
-
-### **F. Database — SQLite**
-
-**somsor.db**
-
-users
-
-บัญชีผู้ใช้และบทบาท
-
-requests
-
-รายการแจ้งซ่อมและสถานะ
-
-assignments
-
-ประวัติการมอบหมายงาน
-
-categories
-
-ประเภทงานซ่อม
-
-technicians
-
-ข้อมูลช่างและสถานะ
-
-ความสัมพันธ์สำคัญคือ `requests.user_id` เชื่อมกับ `users`, `requests.category_id` เชื่อมกับ `categories` และ `assignments` เชื่อมงานแจ้งซ่อมกับช่างผ่าน `request_id` และ `technician_id`
-
-## **5. ตัวอย่างการสื่อสารจริง: Admin มอบหมายงานให้ช่าง**
-
-SQLiteRequest ControllerAuth MiddlewareRequest RouteFrontendSQLiteRequest ControllerAuth MiddlewareRequest RouteFrontend#chatgpt-mermaid-\_r_ig\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_ig\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_ig\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_ig\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_ig\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_ig\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_ig\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_ig\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_ig\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_ig\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_ig\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_ig\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_ig\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_ig\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_ig\_ p{margin:0;}#chatgpt-mermaid-\_r_ig\_ .actor{stroke:rgb(83, 154, 248);fill:rgb(222, 234, 251);stroke-width:1;}#chatgpt-mermaid-\_r_ig\_ rect.actor.outer-path[data-look="neo"]{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_ig\_ rect.note[data-look="neo"]{stroke:rgb(107, 198, 127);fill:rgb(243, 243, 243);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_ig\_ text.actor>tspan{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_ig\_ .actor-line{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_ig\_ .innerArc{stroke-width:1.5;stroke-dasharray:none;}#chatgpt-mermaid-\_r_ig\_ .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_ig\_ .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_ig\_ [id$="-arrowhead"] path{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_ig\_ .sequenceNumber{fill:#707070;}#chatgpt-mermaid-\_r_ig\_ [id$="-sequencenumber"]{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_ig\_ [id$="-crosshead"] path{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_ig\_ .messageText{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_ig\_ .labelBox{stroke:rgba(0, 0, 0, 0.1);fill:rgb(252, 252, 252);filter:none;}#chatgpt-mermaid-\_r_ig\_ .labelText,#chatgpt-mermaid-\_r_ig\_ .labelText>tspan{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_ig\_ .loopText,#chatgpt-mermaid-\_r_ig\_ .loopText>tspan{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_ig\_ .sectionTitle,#chatgpt-mermaid-\_r_ig\_ .sectionTitle>tspan{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_ig\_ .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:rgba(0, 0, 0, 0.1);fill:rgba(0, 0, 0, 0.1);}#chatgpt-mermaid-\_r_ig\_ .note{stroke:rgb(107, 198, 127);fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_ig\_ .noteText,#chatgpt-mermaid-\_r_ig\_ .noteText>tspan{fill:rgb(13, 13, 13);stroke:none;font-weight:normal;}#chatgpt-mermaid-\_r_ig\_ .activation0{fill:rgb(243, 243, 243);stroke:hsl(0, 0%, 85.2941176471%);}#chatgpt-mermaid-\_r_ig\_ .activation1{fill:rgb(243, 243, 243);stroke:hsl(0, 0%, 85.2941176471%);}#chatgpt-mermaid-\_r_ig\_ .activation2{fill:rgb(243, 243, 243);stroke:hsl(0, 0%, 85.2941176471%);}#chatgpt-mermaid-\_r_ig\_ .actorPopupMenu{position:absolute;}#chatgpt-mermaid-\_r_ig\_ .actorPopupMenuPanel{position:absolute;fill:rgb(222, 234, 251);box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#chatgpt-mermaid-\_r_ig\_ .actor-man circle,#chatgpt-mermaid-\_r_ig\_ line{fill:rgb(222, 234, 251);stroke-width:2px;}#chatgpt-mermaid-\_r_ig\_ g rect.rect{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));stroke:rgb(83, 154, 248);}#chatgpt-mermaid-\_r_ig\_ .node .neo-node{stroke:rgb(83, 154, 248);}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_ig\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_ig\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].node .neo-line path{stroke:rgb(83, 154, 248);filter:none;}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_ig\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_ig\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_ig\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_ig\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_ig\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}alt[งาน pending และช่าง available][งานถูกมอบหมายแล้วหรือช่างไม่ว่าง]Adminเลือกงานและช่างPOST /api/v1/requests/:id/assignตรวจสอบ JWT และ Admin Roleส่ง req.user และ Request BodySELECT งานและข้อมูลช่างสถานะงานและสถานะช่างBEGIN TransactionINSERT assignmentsUPDATE requests = in_progressUPDATE technicians = busyCommit สำเร็จ200 มอบหมายสำเร็จ409 ConflictแสดงผลการมอบหมายAdmin
-
-### **ข้อมูลที่รับและส่ง**
-
-**Request**
-
-```
-POST /api/v1/requests/12/assign
-Authorization: Bearer <JWT>
-Content-Type: application/json
-```
-
-```
-{
-  "technician_id": 1,
-  "note": "ตรวจสอบระบบไฟฟ้า"
-}
-```
-
-**Response เมื่อสำเร็จ**
-
-```
-{
-  "message": "มอบหมายสำเร็จ"
-}
-```
-
-**ผลต่อฐานข้อมูล**
-
-| ตาราง         | การเปลี่ยนแปลง            |
-| ------------- | ------------------------- |
-| `assignments` | เพิ่มข้อมูลการมอบหมาย     |
-| `requests`    | `pending` → `in_progress` |
-| `technicians` | `available` → `busy`      |
-
-## **6. สรุปความสัมพันธ์ MVC ของ SOMSOR**
-
-- **View:** รับข้อมูลผู้ใช้ แสดงผล และสื่อสารกับ REST API
-- **Controller:** ตรวจสอบคำขอ บังคับใช้กฎของระบบ และกำหนด HTTP Response
-- **Model:** เป็นส่วนหนึ่งของการเข้าถึงข้อมูลและตรวจสอบความสัมพันธ์ของข้อมูล
-- **Routes + Middleware:** เป็นองค์ประกอบสนับสนุนการรับคำขอ การยืนยันตัวตน และการกำหนดสิทธิ์
-- **SQLite:** จัดเก็บข้อมูลถาวรของระบบ
-
-**สำหรับการนำเสนออาจารย์:** สามารถเรียกโครงสร้างนี้ว่า *MVC-based Express Architecture* ได้อย่างเหมาะสม แต่ไม่ควรอธิบายว่า Controllers ไม่ติดต่อ Database โดยตรง เพราะโค้ดปัจจุบันยังมีการเรียก SQL จาก Controller อยู่จริงครับ
-
-
-การรับ–ส่งข้อมูลของระบบ SOMSOR (7 Use Cases)
-ลำดับการทำงานหลัก
-
-User → Frontend → Route → Auth Middleware → Controller → Model/SQLite → Controller → Frontend → User
-- Frontend → Route: ส่ง HTTP Request พร้อม JWT ใน Header และข้อมูล JSON ใน Body (สำหรับคำขอที่มี Body)
-- Middleware → Controller: ตรวจสอบ JWT และสิทธิ์ผู้ใช้ แล้วส่ง req.user ต่อ
-- Controller → Model/SQLite: ตรวจสอบเงื่อนไขและอ่าน/เขียนข้อมูลด้วย SQL
-- Controller → Frontend: ส่ง HTTP Status และ JSON Response (ยกเว้น 204)
-ได้ครับ ผมจะอธิบายการรับ–ส่งข้อมูลของ **SOMSOR MVC ทั้ง 7 Use Cases** ใหม่ โดยใช้ภาษาง่าย ๆ เหมือนกำลังเล่าให้อาจารย์ฟังตอนนำเสนอ ไม่เน้นคำศัพท์เทคนิคมากเกินไป
-
-ก่อนอื่น ให้เข้าใจหลักการเดียวกันของทุก UC:
-
-แผนภาพนี้แสดงแนวคิด MVC แบบแยกหน้าที่ ส่วน SOMSOR ปัจจุบันบาง Controller ยังเรียก SQLite โดยตรง และมี Route กับ Middleware คั่นก่อนถึง Controller
-
-- **Frontend** รับสิ่งที่ผู้ใช้กดหรือกรอก
-- **Route** ส่งคำขอไปยังฟังก์ชันที่ถูกต้อง
-- **Middleware** ตรวจสอบว่าใครเข้าสู่ระบบและมีสิทธิ์หรือไม่
-- **Controller** ตัดสินใจว่าจะดำเนินการอะไร
-- **Model / SQLite** อ่านหรือบันทึกข้อมูล
-- **Response** ส่งผลกลับไปให้ Frontend แสดงบนหน้าจอ
-
-## **การรับ–ส่งข้อมูลของทั้ง 7 UC**
-
-**เลือก Use Case เพื่อดูการรับ–ส่งข้อมูล**
-
-UC-01: นักศึกษาแจ้งซ่อม
-POST
-/api/v1/requests
-
-1. นักศึกษากรอกชื่อปัญหา รายละเอียด สถานที่ และประเภทงานซ่อม แล้วกดส่ง
-2. Frontend ส่งข้อมูลที่กรอกพร้อม Token ไปยัง Backend
-3. ระบบตรวจสอบตัวตนและข้อมูลที่กรอก จากนั้นบันทึกคำร้องใหม่ลง SQLite โดยกำหนดสถานะเป็น pending
-4. ฐานข้อมูลส่งผลการบันทึกกลับมา และ Backend ส่งข้อมูลคำร้องใหม่ให้ Frontend แสดงว่าแจ้งซ่อมสำเร็จ
-
-ข้อมูลที่ส่งไป
-ชื่อปัญหา, รายละเอียด, สถานที่, ประเภทงานซ่อม
-ข้อมูลที่ส่งกลับ
-รหัสคำร้องและข้อมูลคำร้องใหม่
-
-UC-02: นักศึกษาติดตามสถานะ
-GET
-/api/v1/requests/me
-
-1. นักศึกษาเปิดหน้ารายการแจ้งซ่อมของตนเอง
-2. Frontend ส่งคำขอพร้อม Token เพื่อขอดูรายการ
-3. Backend ตรวจสอบตัวตน แล้วค้นหาคำร้องที่เป็นของนักศึกษาคนนั้นใน SQLite
-4. ฐานข้อมูลส่งรายการคำร้องและสถานะกลับมา เพื่อให้ Frontend แสดงผล
-
-ข้อมูลที่ส่งไป
-Token เพื่อระบุว่าเป็นนักศึกษาคนใด
-ข้อมูลที่ส่งกลับ
-รายการแจ้งซ่อมและสถานะ เช่น pending, in_progress, completed
-
-UC-03: แอดมินดูรายการแจ้งซ่อม
-GET
-/api/v1/requests
-
-1. แอดมินเปิดหน้าจัดการคำร้องแจ้งซ่อม
-2. Frontend ส่งคำขอพร้อม Token ของแอดมิน
-3. Backend ตรวจสอบสิทธิ์ Admin แล้วอ่านรายการแจ้งซ่อมจาก SQLite
-4. ระบบส่งรายการคำร้องกลับมาให้แอดมินดูและเลือกจัดการ
-
-ข้อมูลที่ส่งไป
-Token ของ Admin และตัวเลือกค้นหาหรือกรองรายการถ้ามี
-ข้อมูลที่ส่งกลับ
-รายการคำร้องพร้อมรายละเอียดและสถานะ
-
-UC-04: แอดมินมอบหมายช่าง
-POST
-/api/v1/requests/:id/assign
-
-1. แอดมินเลือกคำร้องที่รอมอบหมาย แล้วเลือกช่างผู้รับผิดชอบ
-2. Frontend ส่งรหัสคำร้อง รหัสช่าง และหมายเหตุไปยัง Backend
-3. Backend ตรวจสอบว่าคำร้องยังเป็น pending และช่างพร้อมรับงาน
-4. ระบบบันทึกการมอบหมาย เปลี่ยนสถานะคำร้องเป็น in_progress และสถานะช่างเป็น busy
-5. Backend ส่งผลสำเร็จกลับมาให้ Frontend แสดงว่ามอบหมายช่างแล้ว
-
-ข้อมูลที่ส่งไป
-รหัสคำร้อง, รหัสช่าง, หมายเหตุ
-ข้อมูลที่ส่งกลับ
-ผลการมอบหมายและสถานะใหม่ของงาน
-
-UC-05: ช่างดูงานที่ได้รับมอบหมาย
-GET
-/api/v1/requests
-
-1. ช่างเข้าสู่หน้ารายการงานที่ได้รับมอบหมาย
-2. Frontend ส่งคำขอพร้อม Token ของช่าง
-3. Backend ตรวจสอบตัวตนและค้นหางานที่ผูกกับช่างคนนั้น
-4. SQLite ส่งรายละเอียดงานกลับมา และ Frontend แสดงรายการงานของช่าง
-
-ข้อมูลที่ส่งไป
-Token เพื่อระบุตัวช่าง
-ข้อมูลที่ส่งกลับ
-รายการงานที่ได้รับมอบหมาย เช่น สถานที่ ปัญหา และสถานะ
-
-UC-06: ช่างปิดงานซ่อม
-PATCH
-/api/v1/requests/:id/status
-
-1. ช่างเลือกงานที่กำลังดำเนินการ แล้วกดปิดงาน
-2. Frontend ส่งรหัสคำร้องและสถานะ completed ไปยัง Backend
-3. Backend ตรวจสอบว่าเป็นช่างที่ได้รับมอบหมายและงานอยู่ในสถานะที่ปิดได้
-4. ระบบอัปเดตคำร้องเป็น completed บันทึกเวลาปิดงาน และปรับสถานะช่างเป็น available
-5. Backend ส่งผลกลับมา และ Frontend แสดงว่างานเสร็จสิ้น
-
-ข้อมูลที่ส่งไป
-รหัสคำร้องและสถานะ completed
-ข้อมูลที่ส่งกลับ
-ผลการปิดงานและสถานะ completed
-
-UC-07: นักศึกษายกเลิกคำร้อง
-DELETE
-/api/v1/requests/:id
-
-1. นักศึกษาเลือกคำร้องของตนเองที่ยังรอดำเนินการ แล้วกดยกเลิก
-2. Frontend ส่งรหัสคำร้องและ Token ไปยัง Backend
-3. Backend ตรวจสอบว่าเป็นเจ้าของคำร้องและคำร้องยังเป็น pending
-4. ระบบเปลี่ยนสถานะเป็น cancelled ใน SQLite โดยไม่จำเป็นต้องลบข้อมูลออกจริง
-5. Backend แจ้งผลสำเร็จ และ Frontend อัปเดตรายการคำร้อง
-
-ข้อมูลที่ส่งไป
-รหัสคำร้องที่ต้องการยกเลิกและ Token
-ข้อมูลที่ส่งกลับ
-ผลการยกเลิกคำร้อง
-
-
-
-## **สิ่งที่ต้องเข้าใจเป็นพิเศษ**
-
-**การส่งข้อมูลมีอยู่ 2 ลักษณะหลัก**
-
-- **การอ่านข้อมูล (GET):** Frontend ขอข้อมูล → Backend ค้นหาจากฐานข้อมูล → ส่งข้อมูลกลับมาแสดง เช่น UC-02, UC-03 และ UC-05
-- **การเปลี่ยนข้อมูล (POST, PATCH, DELETE):** Frontend ส่งสิ่งที่ต้องการทำ → Backend ตรวจสอบเงื่อนไข → บันทึกหรืออัปเดตฐานข้อมูล → แจ้งผล เช่น UC-01, UC-04, UC-06 และ UC-07
-
-**ส่วนคำถามว่า Controller ต้องผ่าน Model ทุกครั้งหรือไม่:** สำหรับโค้ด SOMSOR เวอร์ชันที่เราคุยกัน บาง Controller ยังเรียก SQLite โดยตรง ดังนั้นคำอธิบายด้านบนจึงเน้นการไหลของข้อมูลในเชิงการทำงาน ไม่ได้ยืนยันว่าทุก UC ผ่าน Model จริง
-
-เวลานำเสนอให้อาจารย์ฟัง ให้จำเพียงว่า **ผู้ใช้ทำอะไร → ส่งข้อมูลอะไร → ระบบตรวจสอบอะไร → ฐานข้อมูลเปลี่ยนหรือส่งอะไรกลับ → ผู้ใช้เห็นผลอะไร** ก็จะอธิบายครบทั้ง 7 UC ได้ครับ
+ข้อแนะนำ: หน้า 14 ให้เน้นลำดับ Docker Compose → Image → Container → Network → Volume ส่วนหน้า 21 และ 46 ให้เน้นสิ่งที่กลุ่มพัฒนาเพิ่มเติมเอง เพราะเป็นจุดที่ช่วยแสดงทักษะการพัฒนาระบบของโครงงานได้ชัดเจนครับ
